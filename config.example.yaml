@@ -1,0 +1,34 @@
+targets:
+  discord:
+    webhook_url: "https://discord.com/api/webhooks/..."
+
+  telegram:
+    bot_token: "123456:telegram-bot-token"
+    chat_id: "1234567890"
+    default: true
+
+imaps:
+  - name: personal
+    host: imap.example.com
+    port: 993
+    username: user@example.com
+    password: app-password
+    mailbox: INBOX
+    security: tls
+    # No targets specified: default targets will be used.
+
+  - name: alerts
+    host: imap.example.com
+    port: 993
+    username: alerts@example.com
+    password: app-password
+    mailbox: Alerts
+    security: tls
+    # Explicit targets override default targets.
+    targets:
+      - discord
+
+# Optional.
+proxy:
+  type: socks5
+  address: 127.0.0.1:1080

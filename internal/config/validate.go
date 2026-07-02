@@ -96,8 +96,11 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("proxy.type is required")
 		}
 
-		if c.Proxy.Type != "socks5" {
-			return fmt.Errorf("proxy.type must be socks5")
+		switch c.Proxy.Type {
+		case "socks5", "http":
+			// ok
+		default:
+			return fmt.Errorf("proxy.type must be socks5 or http")
 		}
 
 		if c.Proxy.Address == "" {

@@ -30,5 +30,5 @@ imaps:
 
 # Optional.
 proxy:
-  type: socks5
+  type: socks5 # socks5 or http
   address: 127.0.0.1:1080

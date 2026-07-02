@@ -46,8 +46,11 @@ func Run(cfg *config.Config) error {
 }
 
 func runOnce(ctx context.Context, cfg *config.Config) error {
-	for _, imap := range cfg.IMAPs {
-		fmt.Printf("Checking IMAP account: %s\n", imap.Name)
+	for _, account := range cfg.IMAPs {
+		if err := processAccount(ctx, cfg, account); err != nil {
+			fmt.Printf("account error: account=%s error=%v\n", account.Name, err)
+			continue
+		}
 	}
 
 	return nil

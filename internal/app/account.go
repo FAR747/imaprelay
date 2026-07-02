@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"github.com/FAR747/imaprelay/imapclient"
 	"github.com/FAR747/imaprelay/internal/config"
+	"github.com/FAR747/imaprelay/internal/imapclient"
 )
 
 func processAccount(ctx context.Context, cfg *config.Config, account config.IMAPConfig) error {

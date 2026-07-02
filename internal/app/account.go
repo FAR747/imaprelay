@@ -24,10 +24,11 @@ func processAccount(ctx context.Context, cfg *config.Config, account config.IMAP
 
 	for _, msg := range messages {
 		fmt.Printf(
-			"- uid=%d from=%q title=%q received=%s\n",
+			"- uid=%d from=%q title=%q\nbody=\n%q\nreceived=%s\n",
 			msg.UID,
 			msg.From,
 			msg.Title,
+			msg.Body,
 			msg.ReceivedAt.Format("2006-01-02 15:04:05"),
 		)
 	}

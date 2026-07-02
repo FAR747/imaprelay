@@ -46,8 +46,7 @@ func FetchUnseen(ctx context.Context, account config.IMAPConfig, proxyConfig *co
 	}
 
 	bodySection := &imap.FetchItemBodySection{
-		Specifier: imap.PartSpecifierText,
-		Peek:      true,
+		Peek: true,
 		Partial: &imap.SectionPartial{
 			Offset: 0,
 			Size:   maxFetchedBodyBytes,
@@ -94,7 +93,7 @@ func FetchUnseen(ctx context.Context, account config.IMAPConfig, proxyConfig *co
 		}
 
 		body := buf.FindBodySection(bodySection)
-		msg.Body = strings.TrimSpace(string(body))
+		msg.Body = extractPlainText(body)
 
 		messages = append(messages, msg)
 	}

@@ -105,6 +105,51 @@ func FetchUnseen(ctx context.Context, account config.IMAPConfig, proxyConfig *co
 	return messages, nil
 }
 
+func MarkSeen(ctx context.Context, account config.IMAPConfig, proxyConfig *config.ProxyConfig, uids []UID) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	if len(uids) == 0 {
+		return nil
+	}
+
+	client, err := connect(account, proxyConfig)
+	if err != nil {
+		return fmt.Errorf("connect: %w", err)
+	}
+	defer client.Close()
+
+	if err := client.Login(account.Username, account.Password).Wait(); err != nil {
+		return fmt.Errorf("login: %w", err)
+	}
+
+	defer func() {
+		_ = client.Logout().Wait()
+	}()
+
+	if _, err := client.Select(account.Mailbox, nil).Wait(); err != nil {
+		return fmt.Errorf("select mailbox %q: %w", account.Mailbox, err)
+	}
+
+	imapUIDs := make([]imap.UID, 0, len(uids))
+	for _, uid := range uids {
+		imapUIDs = append(imapUIDs, imap.UID(uid))
+	}
+
+	flags := &imap.StoreFlags{
+		Op:     imap.StoreFlagsAdd,
+		Silent: true,
+		Flags:  []imap.Flag{imap.FlagSeen},
+	}
+
+	if err := client.Store(imap.UIDSetNum(imapUIDs...), flags, nil).Close(); err != nil {
+		return fmt.Errorf("store seen flags: %w", err)
+	}
+
+	return nil
+}
+
 func formatAddresses(addresses []imap.Address) string {
 	if len(addresses) == 0 {
 		return ""

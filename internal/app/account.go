@@ -11,6 +11,7 @@ func processAccount(ctx context.Context, cfg *config.Config, account config.IMAP
 	fmt.Printf("Checking IMAP account: %s\n", account.Name)
 
 	messages, err := imapclient.FetchUnseen(ctx, account, cfg.Proxy)
+	seenUIDs := make([]imapclient.UID, 0, len(messages))
 	if err != nil {
 		return fmt.Errorf("fetch unseen: %w", err)
 	}
@@ -31,7 +32,14 @@ func processAccount(ctx context.Context, cfg *config.Config, account config.IMAP
 			msg.Body,
 			msg.ReceivedAt.Format("2006-01-02 15:04:05"),
 		)
+
+		seenUIDs = append(seenUIDs, msg.UID)
 	}
+
+	if err := imapclient.MarkSeen(ctx, account, cfg.Proxy, seenUIDs); err != nil {
+		return fmt.Errorf("mark seen: %w", err)
+	}
+	fmt.Printf("Marked messages as seen: account=%s count=%d\n", account.Name, len(seenUIDs))
 
 	return nil
 }

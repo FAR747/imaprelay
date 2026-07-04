@@ -83,6 +83,7 @@ func FetchUnseen(ctx context.Context, account config.IMAPConfig, proxyConfig *co
 		msg := Message{
 			UID:        UID(buf.UID),
 			Account:    account.Name,
+			Username:   account.Username,
 			Mailbox:    account.Mailbox,
 			ReceivedAt: buf.InternalDate,
 		}

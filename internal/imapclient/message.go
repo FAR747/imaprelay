@@ -5,9 +5,10 @@ import "time"
 type UID uint32
 
 type Message struct {
-	UID     UID
-	Account string
-	Mailbox string
+	UID      UID
+	Account  string
+	Username string
+	Mailbox  string
 
 	From  string
 	Title string

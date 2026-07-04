@@ -1,6 +1,7 @@
 package target
 
 import (
+	"fmt"
 	"github.com/FAR747/imaprelay/internal/imapclient"
 	"strings"
 )
@@ -9,11 +10,44 @@ const MaxPushLength = 1500
 const MaxTitleLength = 128
 const MaxFromLength = 128
 
-const DefaultHeader = "Account: {account} ({username})\\nFrom: {from}\\nTitle: {title}\\nReceived: {received}\\n\\n"
+type FormatType string
+
+const (
+	FormatDiscord  FormatType = "discord"
+	FormatTelegram FormatType = "telegram"
+)
+
+// Discord
+const DefaultHeaderDiscord = "**NEW MESSAGE**\n> Account: `{account}` (`{username}`)\n> From: `{from}`\n> Title: `{title}`\n> Received: `{received}`\n\n"
+
+// Telegram
+const DefaultHeaderTelegram = "*NEW MESSAGE*\nAccount: `{account}` (`{username}`)\nFrom: `{from}`\nTitle: `{title}`\nReceived: `{received}`\n\n"
+
 const DefaultTimeFormat = "02.01.2006 15:04"
 
-func FormatMessage(msg imapclient.Message) string {
-	header := formatTags(DefaultHeader, msg)
+func FormatMessage(msg imapclient.Message, formatTypes ...FormatType) (string, error) {
+	if len(formatTypes) > 1 {
+		return "", fmt.Errorf("only one format type is allowed")
+	}
+
+	formatType := FormatDiscord
+	rawHeader := DefaultHeaderDiscord
+	if len(formatTypes) == 1 {
+		formatType = formatTypes[0]
+	}
+
+	switch formatType {
+	case FormatDiscord:
+		rawHeader = DefaultHeaderDiscord
+
+	case FormatTelegram:
+		rawHeader = DefaultHeaderTelegram
+
+	default:
+		return "", fmt.Errorf("unknown format type %q", formatType)
+	}
+
+	header := formatTags(rawHeader, msg)
 
 	bodyLimit := MaxPushLength - len([]rune(header))
 	if bodyLimit < 0 {
@@ -21,7 +55,7 @@ func FormatMessage(msg imapclient.Message) string {
 	}
 	body := truncateRunes(msg.Body, bodyLimit)
 
-	return header + body
+	return header + body, nil
 }
 
 func formatTags(text string, msg imapclient.Message) string {

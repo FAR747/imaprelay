@@ -7,6 +7,8 @@ import (
 )
 
 const MaxPushLength = 1500
+const MaxAccountLength = 64
+const MaxUsernameLength = 128
 const MaxTitleLength = 128
 const MaxFromLength = 128
 
@@ -21,7 +23,7 @@ const (
 const DefaultHeaderDiscord = "**NEW MESSAGE**\n> Account: `{account}` (`{username}`)\n> From: `{from}`\n> Title: `{title}`\n> Received: `{received}`\n\n"
 
 // Telegram
-const DefaultHeaderTelegram = "*NEW MESSAGE*\nAccount: `{account}` (`{username}`)\nFrom: `{from}`\nTitle: `{title}`\nReceived: `{received}`\n\n"
+const DefaultHeaderTelegram = "<b>NEW MESSAGE</b>\nAccount: <code>{account}</code> (<code>{username}</code>)\nFrom: <code>{from}</code>\nTitle: <code>{title}</code>\nReceived: <code>{received}</code>\n\n"
 
 const DefaultTimeFormat = "02.01.2006 15:04"
 
@@ -31,45 +33,49 @@ func FormatMessage(msg imapclient.Message, formatTypes ...FormatType) (string, e
 	}
 
 	formatType := FormatDiscord
-	rawHeader := DefaultHeaderDiscord
 	if len(formatTypes) == 1 {
 		formatType = formatTypes[0]
 	}
 
 	switch formatType {
 	case FormatDiscord:
-		rawHeader = DefaultHeaderDiscord
+		return renderMessage(msg, DefaultHeaderDiscord, escapeDiscord), nil
 
 	case FormatTelegram:
-		rawHeader = DefaultHeaderTelegram
+		return renderMessage(msg, DefaultHeaderTelegram, escapeHTML), nil
 
 	default:
 		return "", fmt.Errorf("unknown format type %q", formatType)
 	}
-
-	header := formatTags(rawHeader, msg)
-
-	bodyLimit := MaxPushLength - len([]rune(header))
-	if bodyLimit < 0 {
-		bodyLimit = 0
-	}
-	body := truncateRunes(msg.Body, bodyLimit)
-
-	return header + body, nil
 }
 
-func formatTags(text string, msg imapclient.Message) string {
+func renderMessage(msg imapclient.Message, rawHeader string, escape func(string) string) string {
+	header := formatTags(rawHeader, msg, escape)
+
+	if len([]rune(header)) >= MaxPushLength {
+		return truncateRunes(header, MaxPushLength)
+	}
+
+	bodyLimit := MaxPushLength - len([]rune(header))
+	body := truncateRunes(escape(msg.Body), bodyLimit)
+
+	return header + body
+}
+
+func formatTags(text string, msg imapclient.Message, escape func(string) string) string {
 	values := map[string]string{
-		"{account}":  msg.Account,
-		"{username}": msg.Username,
-		"{from}":     truncateRunes(msg.From, MaxFromLength),
-		"{title}":    truncateRunes(msg.Title, MaxTitleLength),
+		"{account}":  escape(truncateRunes(msg.Account, MaxAccountLength)),
+		"{username}": escape(truncateRunes(msg.Username, MaxUsernameLength)),
+		"{from}":     escape(truncateRunes(msg.From, MaxFromLength)),
+		"{title}":    escape(truncateRunes(msg.Title, MaxTitleLength)),
 		"{received}": msg.ReceivedAt.Format(DefaultTimeFormat),
 	}
+
 	result := text
 	for key, value := range values {
 		result = strings.ReplaceAll(result, key, value)
 	}
+
 	return result
 }
 
@@ -85,4 +91,17 @@ func truncateRunes(s string, max int) string {
 	}
 
 	return string(runes[:max-3]) + "..."
+}
+
+func escapeDiscord(s string) string {
+	return strings.ReplaceAll(s, "`", "'")
+}
+
+func escapeHTML(s string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+	)
+	return replacer.Replace(s)
 }

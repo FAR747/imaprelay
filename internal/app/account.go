@@ -7,8 +7,13 @@ import (
 	"github.com/FAR747/imaprelay/internal/imapclient"
 	"github.com/FAR747/imaprelay/internal/target"
 	"github.com/FAR747/imaprelay/internal/target/discord"
+	"github.com/FAR747/imaprelay/internal/target/telegram"
 	"net/http"
+	"time"
 )
+
+// Send Delay per message
+const SendDelay = 250 * time.Millisecond
 
 func processAccount(ctx context.Context, cfg *config.Config, account config.IMAPConfig) error {
 	fmt.Printf("Checking IMAP account: %s\n", account.Name)
@@ -26,8 +31,14 @@ func processAccount(ctx context.Context, cfg *config.Config, account config.IMAP
 
 	fmt.Printf("Unseen messages: account=%s count=%d\n", account.Name, len(messages))
 
-	for _, msg := range messages {
-		//fmt.Println(target.FormatMessage(msg))
+	for i, msg := range messages {
+		if i > 0 { // Delay
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(SendDelay):
+			}
+		}
 
 		if err := sendMessage(ctx, cfg, account, msg); err != nil {
 			fmt.Printf("send error: account=%s uid=%d error=%v\n", account.Name, msg.UID, err)
@@ -102,7 +113,15 @@ func buildSender(cfg *config.Config, targetName string, httpClient *http.Client)
 		return discord.NewWebhookSender(cfg.Targets.Discord.WebhookURL, httpClient), target.FormatDiscord, nil
 
 	case "telegram":
-		return nil, "", fmt.Errorf("telegram target is not implemented yet")
+		if cfg.Targets.Telegram == nil {
+			return nil, "", fmt.Errorf("telegram target is not configured")
+		}
+
+		return telegram.NewBotSender(
+			cfg.Targets.Telegram.BotToken,
+			cfg.Targets.Telegram.ChatID,
+			httpClient,
+		), target.FormatTelegram, nil
 
 	default:
 		return nil, "", fmt.Errorf("unknown target %q", targetName)

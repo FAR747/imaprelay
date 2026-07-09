@@ -7,6 +7,7 @@ import (
 	"github.com/FAR747/imaprelay/internal/imapclient"
 	"github.com/FAR747/imaprelay/internal/target"
 	"github.com/FAR747/imaprelay/internal/target/discord"
+	"net/http"
 )
 
 func processAccount(ctx context.Context, cfg *config.Config, account config.IMAPConfig) error {
@@ -47,6 +48,10 @@ func processAccount(ctx context.Context, cfg *config.Config, account config.IMAP
 func sendMessage(ctx context.Context, cfg *config.Config, account config.IMAPConfig, msg imapclient.Message) error {
 	targetNames := resolveTargetNames(cfg, account)
 
+	if len(targetNames) == 0 {
+		return fmt.Errorf("no targets resolved")
+	}
+
 	httpClient, err := target.NewHTTPClient(cfg.Proxy)
 	if err != nil {
 		return fmt.Errorf("create target http client: %w", err)
@@ -56,35 +61,24 @@ func sendMessage(ctx context.Context, cfg *config.Config, account config.IMAPCon
 	var errors []error
 
 	for _, targetName := range targetNames {
-		switch targetName {
-		case "discord":
-			if cfg.Targets.Discord == nil {
-				errors = append(errors, fmt.Errorf("discord target is not configured"))
-				continue
-			}
-
-			text, err := target.FormatMessage(msg, target.FormatDiscord)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("discord format: %w", err))
-				continue
-			}
-			sender := discord.NewWebhookSender(cfg.Targets.Discord.WebhookURL, httpClient)
-
-			if err := sender.Send(ctx, text); err != nil {
-				errors = append(errors, fmt.Errorf("discord: %w", err))
-				continue
-			}
-
-			successCount++
-
-		case "telegram":
-			errors = append(errors, fmt.Errorf("telegram: not implemented")) // TODO: Add Telegram
-			continue
-
-		default:
-			errors = append(errors, fmt.Errorf("%s: unknown target", targetName))
+		sender, formatType, err := buildSender(cfg, targetName, httpClient)
+		if err != nil {
+			errors = append(errors, err)
 			continue
 		}
+
+		text, err := target.FormatMessage(msg, formatType)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("%s format: %w", targetName, err))
+			continue
+		}
+
+		if err := sender.Send(ctx, text); err != nil {
+			errors = append(errors, fmt.Errorf("%s send: %w", targetName, err))
+			continue
+		}
+
+		successCount++
 	}
 
 	if successCount > 0 {
@@ -96,6 +90,23 @@ func sendMessage(ctx context.Context, cfg *config.Config, account config.IMAPCon
 	}
 
 	return fmt.Errorf("all targets failed: %v", errors)
+}
+
+func buildSender(cfg *config.Config, targetName string, httpClient *http.Client) (target.Sender, target.FormatType, error) {
+	switch targetName {
+	case "discord":
+		if cfg.Targets.Discord == nil {
+			return nil, "", fmt.Errorf("discord target is not configured")
+		}
+
+		return discord.NewWebhookSender(cfg.Targets.Discord.WebhookURL, httpClient), target.FormatDiscord, nil
+
+	case "telegram":
+		return nil, "", fmt.Errorf("telegram target is not implemented yet")
+
+	default:
+		return nil, "", fmt.Errorf("unknown target %q", targetName)
+	}
 }
 
 func resolveTargetNames(cfg *config.Config, account config.IMAPConfig) []string {

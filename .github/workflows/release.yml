@@ -39,7 +39,11 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build             -trimpath             -ldflags="-s -w -X main.version=${VERSION}"             -o "dist/${BINARY_NAME}-linux-amd64"             .
+          go build \
+            -trimpath \
+            -ldflags="-s -w -X main.version=${VERSION}" \
+            -o "dist/${BINARY_NAME}-linux-amd64" \
+            .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
@@ -72,7 +76,11 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build             -trimpath             -ldflags="-s -w -X main.version=${VERSION}"             -o "dist/${BINARY_NAME}-linux-arm64"             .
+          go build \
+            -trimpath \
+            -ldflags="-s -w -X main.version=${VERSION}" \
+            -o "dist/${BINARY_NAME}-linux-arm64" \
+            .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
@@ -105,7 +113,11 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          go build             -trimpath             -ldflags="-s -w -X main.version=${VERSION}"             -o "dist/${BINARY_NAME}-windows-amd64.exe"             .
+          go build \
+            -trimpath \
+            -ldflags="-s -w -X main.version=${VERSION}" \
+            -o "dist/${BINARY_NAME}-windows-amd64.exe" \
+            .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
@@ -141,4 +153,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${VERSION}"             dist/imaprelay-linux-amd64             dist/imaprelay-linux-arm64             dist/imaprelay-windows-amd64.exe             dist/checksums.txt             --clobber
+          gh release upload "${VERSION}" \
+            dist/imaprelay-linux-amd64 \
+            dist/imaprelay-linux-arm64 \
+            dist/imaprelay-windows-amd64.exe \
+            dist/checksums.txt \
+            --clobber

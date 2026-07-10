@@ -11,7 +11,7 @@ import (
 	"github.com/FAR747/imaprelay/internal/config"
 )
 
-const DefaultCheckTime = 60 // in seconds
+const DefaultCheckTime = 120 // in seconds
 
 func Run(cfg *config.Config) error {
 	ctx, stop := signal.NotifyContext(

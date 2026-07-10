@@ -152,6 +152,7 @@ jobs:
       - name: Upload files to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           gh release upload "${VERSION}" \
             dist/imaprelay-linux-amd64 \

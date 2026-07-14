@@ -146,6 +146,10 @@ jobs:
         working-directory: dist
         run: sha256sum imaprelay-* > checksums.txt
 
+      - name: Display checksums
+        working-directory: dist
+        run: cat checksums.txt
+
       - name: Show release files
         run: ls -lah dist
 

@@ -1,6 +1,8 @@
 package config
 
 type Config struct {
+	CheckInterval int `yaml:"check_interval,omitempty"` // Mailbox polling interval in seconds.
+
 	Targets TargetsConfig `yaml:"targets"`
 	IMAPs   []IMAPConfig  `yaml:"imaps"`
 	Proxy   *ProxyConfig  `yaml:"proxy,omitempty"`

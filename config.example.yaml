@@ -28,6 +28,9 @@ imaps:
     targets:
       - discord
 
+# Optional. Mailbox polling interval in seconds. Minimum: 30 seconds. Default: 120.
+check_interval: 120
+
 # Optional.
 proxy:
   type: socks5 # socks5 or http

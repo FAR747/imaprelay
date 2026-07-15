@@ -11,8 +11,6 @@ import (
 	"github.com/FAR747/imaprelay/internal/config"
 )
 
-const DefaultCheckTime = 120 // in seconds
-
 func Run(cfg *config.Config) error {
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
@@ -22,12 +20,12 @@ func Run(cfg *config.Config) error {
 	defer stop()
 
 	fmt.Println("ImapRelay started")
+	fmt.Printf("Check interval: %d seconds\n", cfg.CheckInterval)
 
 	if err := runOnce(ctx, cfg); err != nil {
 		fmt.Printf("poll error: %v\n", err)
 	}
-
-	checkTime := time.Duration(DefaultCheckTime) * time.Second // TODO: add interval in config
+	checkTime := time.Duration(cfg.CheckInterval) * time.Second
 	ticker := time.NewTicker(checkTime)
 	defer ticker.Stop()
 

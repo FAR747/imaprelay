@@ -2,7 +2,19 @@ package config
 
 import "fmt"
 
+const (
+	DefaultCheckTime = 120 // in seconds
+	MinCheckTime     = 30  // in seconds
+)
+
 func (c *Config) SetDefaults() {
+	if c.CheckInterval < MinCheckTime {
+		if c.CheckInterval > 0 {
+			fmt.Printf("Warning: check_interval cannot be less than %d seconds, using default value %d seconds\n", MinCheckTime, DefaultCheckTime)
+		}
+		c.CheckInterval = DefaultCheckTime
+	}
+
 	for i := range c.IMAPs {
 		if c.IMAPs[i].Security == "" {
 			switch c.IMAPs[i].Port {
